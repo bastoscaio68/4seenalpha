@@ -1,1 +1,860 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4seen Alpha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #060608;
+    --surface: #0d0d10;
+    --surface2: #13131a;
+    --gold: #c9a84c;
+    --gold-dim: #7a6330;
+    --white: #ede8dc;
+    --muted: #4a4438;
+    --green: #3d9e68;
+    --red: #b84444;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 200;
+    padding: 20px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(201,168,76,0.07);
+    background: rgba(6,6,8,0.9);
+    backdrop-filter: blur(16px);
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .logo span { font-style: italic; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .lang-toggle { display: flex; border: 1px solid rgba(201,168,76,0.2); }
+  .lang-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .lang-btn.active { background: var(--gold); color: var(--black); }
+  .sound-btn {
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .sound-btn.on { border-color: var(--gold); color: var(--gold); }
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 24px 80px;
+    position: relative;
+    text-align: center;
+  }
+  .hero-glow {
+    position: absolute;
+    top: 30%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 0.3s forwards;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(56px, 10vw, 130px);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 0.5s forwards;
+  }
+  .hero-title em { color: var(--gold); font-style: italic; }
+  .hero-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(18px, 2.5vw, 26px);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--muted);
+    margin-bottom: 64px;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 0.7s forwards;
+  }
+  .metrics {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 64px;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 0.9s forwards;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 40px;
+    background: rgba(201,168,76,0.03);
+    border: 1px solid rgba(201,168,76,0.1);
+    gap: 8px;
+    min-width: 140px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+  .metric::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .metric:hover::before { opacity: 1; }
+  .metric:hover { background: rgba(201,168,76,0.05); }
+  .metric-label {
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .metric-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1;
+    transition: all 0.5s;
+  }
+  .metric-value.green { color: var(--green); }
+  .metric-value.red { color: var(--red); }
+  .metric-note { font-size: 8px; color: var(--muted); letter-spacing: 0.1em; }
+  .waitlist-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 1.1s forwards;
+    width: 100%;
+    max-width: 440px;
+  }
+  .waitlist-label {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+  }
+  .form-row { display: flex; width: 100%; }
+  .form-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-right: none;
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 13px 18px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .form-row input::placeholder { color: var(--muted); }
+  .form-row input:focus { border-color: rgba(201,168,76,0.4); }
+  .form-row button {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 13px 22px;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .form-row button:hover { background: #dfc060; }
+  .waitlist-note { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; }
+  .waitlist-note span { color: var(--gold); }
+  .success-msg { font-size: 10px; color: var(--green); letter-spacing: 0.1em; display: none; }
+  .scroll-hint {
+    position: absolute;
+    bottom: 36px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.6s forwards;
+  }
+  .scroll-hint span { font-size: 8px; letter-spacing: 0.3em; color: var(--muted); text-transform: uppercase; }
+  .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--gold-dim), transparent); animation: scrollAnim 2s ease infinite; }
+  .chart-section { padding: 60px 0 100px; }
+  .chart-label {
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  #anim-chart { width: 100%; height: 220px; display: block; min-height: 220px; }
+  .chart-caption { text-align: center; font-size: 9px; color: var(--muted); letter-spacing: 0.15em; margin-top: 16px; }
+  .manifesto {
+    padding: 100px 24px;
+    background: var(--surface);
+    border-top: 1px solid rgba(201,168,76,0.06);
+    border-bottom: 1px solid rgba(201,168,76,0.06);
+    text-align: center;
+  }
+  .manifesto-inner { max-width: 680px; margin: 0 auto; }
+  .manifesto-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(26px, 4vw, 50px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.3;
+    margin-bottom: 28px;
+  }
+  .manifesto-quote em { color: var(--gold); font-style: normal; }
+  .manifesto-attr { font-size: 9px; letter-spacing: 0.3em; color: var(--muted); text-transform: uppercase; }
+  .features-section { padding: 100px 24px; max-width: 1000px; margin: 0 auto; }
+  .section-eyebrow { font-size: 9px; letter-spacing: 0.35em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 20px; }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(34px, 5vw, 60px);
+    font-weight: 300;
+    line-height: 1.1;
+    margin-bottom: 64px;
+  }
+  .section-title em { color: var(--gold); font-style: italic; }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: rgba(201,168,76,0.08);
+  }
+  .feature {
+    background: var(--black);
+    padding: 36px 32px;
+    position: relative;
+    transition: background 0.3s;
+  }
+  .feature:hover { background: var(--surface); }
+  .feature-num { font-size: 9px; color: var(--gold-dim); letter-spacing: 0.2em; margin-bottom: 20px; }
+  .feature-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; margin-bottom: 12px; line-height: 1.2; }
+  .feature-desc { font-size: 10px; line-height: 1.9; color: var(--muted); }
+  .final-cta { padding: 120px 24px; text-align: center; position: relative; }
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 100%, rgba(201,168,76,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .final-cta .hero-title { opacity: 1; animation: none; font-size: clamp(40px,7vw,96px); margin-bottom: 20px; }
+  .final-cta .hero-sub { opacity: 1; animation: none; margin-bottom: 48px; }
+  .final-cta .waitlist-wrap { opacity: 1; animation: none; margin: 0 auto; }
+  footer {
+    padding: 28px 48px;
+    border-top: 1px solid rgba(201,168,76,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer .logo { font-size: 15px; }
+  footer p { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scrollAnim {
+    0%,100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+  @media (max-width: 640px) {
+    nav { padding: 16px 20px; }
+    .metric { padding: 20px 24px; min-width: 120px; }
+    .metric-value { font-size: 32px; }
+    .form-row { flex-direction: column; }
+    .form-row input { border-right: 1px solid rgba(201,168,76,0.15); border-bottom: none; }
+    footer { flex-direction: column; }
+  }
 
+  /* SOUND TOAST */
+  #sound-toast {
+    position: fixed;
+    bottom: 32px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    background: rgba(13,13,16,0.92);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    animation: toastPulse 2s ease infinite;
+    white-space: nowrap;
+  }
+  #sound-toast.hidden { display: none; }
+  @keyframes toastPulse {
+    0%,100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sound-toast" onclick="activateSound()">♪ clique para ativar o som</div>
+
+<nav>
+  <div class="logo">4seen <span>Alpha</span></div>
+  <div class="nav-right">
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">♪ SOM</button>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('pt')">PT</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-tag" id="txt-tag">Mercados de Predição · Execução Autônoma</div>
+  <h1 class="hero-title" id="txt-title">O mercado<br>já <em>sabe.</em></h1>
+  <p class="hero-sub" id="txt-sub">Nós chegamos primeiro.</p>
+
+  <div class="metrics">
+    <div class="metric">
+      <span class="metric-label" id="txt-l24">Últimas 24h</span>
+      <span class="metric-value" id="m-24h">…</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label" id="txt-l7d">Últimos 7 dias</span>
+      <span class="metric-value" id="m-7d">…</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label" id="txt-l30d">Últimos 30 dias</span>
+      <span class="metric-value" id="m-30d">…</span>
+      <span class="metric-note" id="m-30d-note"></span>
+    </div>
+  </div>
+
+  <div class="waitlist-wrap">
+    <div class="waitlist-label" id="txt-wlabel">Acesso Antecipado</div>
+    <div class="form-row">
+      <input type="email" id="email-hero" placeholder="seu@email.com" />
+      <button onclick="submitEmail('hero')" id="txt-wbtn">Entrar na Lista</button>
+    </div>
+    <div class="waitlist-note"><span id="wcount">47</span> <span id="txt-wcount">pessoas aguardando</span></div>
+    <div class="success-msg" id="success-hero">✓ Você está na lista.</div>
+  </div>
+
+  <div class="scroll-hint">
+    <span id="txt-scroll">rolar</span>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<div class="chart-section">
+  <div class="chart-label" id="txt-chartlabel">Curva de Capital · Sistema ao Vivo</div>
+  <canvas id="anim-chart"></canvas>
+  <div class="chart-caption" id="txt-chartcap">Dados reais. Sistema operando agora.</div>
+</div>
+
+<div class="manifesto">
+  <div class="manifesto-inner">
+    <p class="manifesto-quote" id="txt-quote">"A maioria reage ao mercado.<br><em>4seen Alpha</em> age antes que ele se mova."</p>
+    <p class="manifesto-attr" id="txt-attr">— Autônomo · Preciso · Implacável</p>
+  </div>
+</div>
+
+<div class="features-section">
+  <div class="section-eyebrow" id="txt-howlabel">Como Funciona</div>
+  <h2 class="section-title" id="txt-howTitle">Construído diferente.<br><em>Opera diferente.</em></h2>
+  <div class="features-grid">
+    <div class="feature">
+      <div class="feature-num">01</div>
+      <div class="feature-title" id="f1t">Execução Autônoma</div>
+      <p class="feature-desc" id="f1d">Sem intervenção manual. Sem emoção. 4seen Alpha escaneia, entra, gerencia e fecha posições 24 horas por dia — enquanto você dorme.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">02</div>
+      <div class="feature-title" id="f2t">Detecção de Edge</div>
+      <p class="feature-desc" id="f2d">Lógica proprietária identifica janelas de alta probabilidade em mercados de predição antes que elas se fechem. O sinal é silencioso. A execução é precisa.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">03</div>
+      <div class="feature-title" id="f3t">Arquitetura de Risco</div>
+      <p class="feature-desc" id="f3d">Cada posição tem uma saída definida. Take profit, stop loss e lógica de timeout operam de forma independente — nenhuma posição fica desatendida.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">04</div>
+      <div class="feature-title" id="f4t">Transparência Real</div>
+      <p class="feature-desc" id="f4d">Resultados reais. Sem backtesting fantasioso. O que você vê nesta página é puxado ao vivo do sistema rodando agora.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">05</div>
+      <div class="feature-title" id="f5t">On-Chain</div>
+      <p class="feature-desc" id="f5d">Todas as operações liquidam na blockchain Polygon. Sua carteira, seu controle. Sem custódia. A blockchain é a fonte da verdade.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">06</div>
+      <div class="feature-title" id="f6t">O que não revelamos</div>
+      <p class="feature-desc" id="f6d">A estratégia, os filtros, a lógica exata — isso fica proprietário. O edge só funciona se permanecer em silêncio. Resultados falam mais alto que documentação.</p>
+    </div>
+  </div>
+</div>
+
+<div class="final-cta">
+  <h1 class="hero-title" id="txt-ctaTitle">Chegue <em>cedo.</em></h1>
+  <p class="hero-sub" id="txt-ctaSub">A lista de espera ainda é curta.</p>
+  <div class="waitlist-wrap">
+    <div class="waitlist-label" id="txt-wlabel2">Acesso Antecipado</div>
+    <div class="form-row">
+      <input type="email" id="email-cta" placeholder="seu@email.com" />
+      <button onclick="submitEmail('cta')" id="txt-wbtn2">Entrar na Lista</button>
+    </div>
+    <div class="success-msg" id="success-cta">✓ Você está na lista.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="logo">4seen <span>Alpha</span></div>
+  <p id="txt-copy">© 2026 4seen Alpha. Todos os direitos reservados.</p>
+  <p style="color:#2a2418;font-size:9px" id="txt-live">Dados em tempo real de operação autônoma.</p>
+</footer>
+
+<script>
+const API = '';
+let waitlistCount = 47;
+let currentLang = 'pt';
+let soundOn = false;
+let audioCtx = null;
+let soundNodes = [];
+
+// ─── TRANSLATIONS ──────────────────────────────────────────────────────────
+const T = {
+  pt: {
+    'txt-tag': 'Mercados de Predição · Execução Autônoma',
+    'txt-title': 'O mercado<br>já <em>sabe.</em>',
+    'txt-sub': 'Nós chegamos primeiro.',
+    'txt-l24': 'Últimas 24h',
+    'txt-l7d': 'Últimos 7 dias',
+    'txt-l30d': 'Últimos 30 dias',
+    'txt-wlabel': 'Acesso Antecipado',
+    'txt-wlabel2': 'Acesso Antecipado',
+    'txt-wbtn': 'Entrar na Lista',
+    'txt-wbtn2': 'Entrar na Lista',
+    'txt-wcount': 'pessoas aguardando',
+    'txt-scroll': 'rolar',
+    'txt-chartlabel': 'Curva de Capital · Sistema ao Vivo',
+    'txt-chartcap': 'Dados reais. Sistema operando agora.',
+    'txt-quote': '"A maioria reage ao mercado.<br><em>4seen Alpha</em> age antes que ele se mova."',
+    'txt-attr': '— Autônomo · Preciso · Implacável',
+    'txt-howlabel': 'Como Funciona',
+    'txt-howTitle': 'Construído diferente.<br><em>Opera diferente.</em>',
+    'txt-ctaTitle': 'Chegue <em>cedo.</em>',
+    'txt-ctaSub': 'A lista de espera ainda é curta.',
+    'txt-copy': '© 2026 4seen Alpha. Todos os direitos reservados.',
+    'txt-live': 'Dados em tempo real de operação autônoma.',
+    'f1t': 'Execução Autônoma', 'f1d': 'Sem intervenção manual. Sem emoção. 4seen Alpha escaneia, entra, gerencia e fecha posições 24 horas por dia — enquanto você dorme.',
+    'f2t': 'Detecção de Edge', 'f2d': 'Lógica proprietária identifica janelas de alta probabilidade em mercados de predição antes que elas se fechem. O sinal é silencioso. A execução é precisa.',
+    'f3t': 'Arquitetura de Risco', 'f3d': 'Cada posição tem uma saída definida. Take profit, stop loss e lógica de timeout operam de forma independente — nenhuma posição fica desatendida.',
+    'f4t': 'Transparência Real', 'f4d': 'Resultados reais. Sem backtesting fantasioso. O que você vê nesta página é puxado ao vivo do sistema rodando agora.',
+    'f5t': 'On-Chain', 'f5d': 'Todas as operações liquidam na blockchain Polygon. Sua carteira, seu controle. Sem custódia. A blockchain é a fonte da verdade.',
+    'f6t': 'O que não revelamos', 'f6d': 'A estratégia, os filtros, a lógica exata — isso fica proprietário. O edge só funciona se permanecer em silêncio. Resultados falam mais alto que documentação.',
+    'success': '✓ Você está na lista.',
+    'soundOff': '♪ SOM', 'soundOn': '♪ SOM ON',
+    'extrap': '* projetado',
+    'ph': 'seu@email.com',
+  },
+  en: {
+    'txt-tag': 'Prediction Markets · Autonomous Execution',
+    'txt-title': 'The market<br>already <em>knows.</em>',
+    'txt-sub': 'We just get there first.',
+    'txt-l24': 'Last 24h',
+    'txt-l7d': 'Last 7 days',
+    'txt-l30d': 'Last 30 days',
+    'txt-wlabel': 'Early Access',
+    'txt-wlabel2': 'Early Access',
+    'txt-wbtn': 'Join Waitlist',
+    'txt-wbtn2': 'Join Waitlist',
+    'txt-wcount': 'people waiting',
+    'txt-scroll': 'scroll',
+    'txt-chartlabel': 'Capital Curve · Live System',
+    'txt-chartcap': 'Real data. System running now.',
+    'txt-quote': '"Most people react to the market.<br><em>4seen Alpha</em> acts before it moves."',
+    'txt-attr': '— Autonomous · Precise · Relentless',
+    'txt-howlabel': 'How It Works',
+    'txt-howTitle': 'Built different.<br><em>Operates different.</em>',
+    'txt-ctaTitle': 'Be <em>early.</em>',
+    'txt-ctaSub': 'The waitlist is still short.',
+    'txt-copy': '© 2026 4seen Alpha. All rights reserved.',
+    'txt-live': 'Live data from autonomous trading.',
+    'f1t': 'Autonomous Execution', 'f1d': 'No manual intervention. No emotion. 4seen Alpha scans, enters, manages and exits positions 24 hours a day — while you sleep.',
+    'f2t': 'Edge Detection', 'f2d': 'Proprietary logic identifies high-probability windows in prediction markets before they close. The signal is silent. The execution is precise.',
+    'f3t': 'Risk Architecture', 'f3d': 'Every position has a defined exit. Take profit, stop loss and timeout logic operate independently — no position is left unattended.',
+    'f4t': 'Real Transparency', 'f4d': 'Real results. No backtested fantasy. What you see on this page is pulled live from the system running right now.',
+    'f5t': 'On-Chain', 'f5d': 'All trades settle on Polygon blockchain. Your wallet, your control. No custody. The blockchain is the source of truth.',
+    'f6t': 'What We Don\'t Reveal', 'f6d': 'The strategy, the filters, the exact logic — that stays proprietary. The edge only works if it stays quiet. Results speak louder than documentation.',
+    'success': '✓ You\'re on the list.',
+    'soundOff': '♪ SOUND', 'soundOn': '♪ SOUND ON',
+    'extrap': '* projected',
+    'ph': 'your@email.com',
+  }
+};
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang));
+  const t = T[lang];
+  Object.keys(t).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = t[id];
+  });
+  document.querySelectorAll('input[type="email"]').forEach(i => i.placeholder = t.ph);
+  document.getElementById('soundBtn').textContent = soundOn ? t.soundOn : t.soundOff;
+  document.querySelectorAll('.success-msg').forEach(el => el.textContent = t.success);
+}
+
+// ─── SOUND ─────────────────────────────────────────────────────────────────
+function toggleSound() {
+  if (!soundOn) { startSound(); soundOn = true; document.getElementById('soundBtn').classList.add('on'); }
+  else { stopSound(); soundOn = false; document.getElementById('soundBtn').classList.remove('on'); }
+  document.getElementById('soundBtn').textContent = soundOn ? T[currentLang].soundOn : T[currentLang].soundOff;
+}
+
+function startSound() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  soundNodes = [];
+  const now = audioCtx.currentTime;
+
+  // ── Reverb ──────────────────────────────────────────────────────────────
+  const convolver = audioCtx.createConvolver();
+  const revLen = audioCtx.sampleRate * 2.5;
+  const revBuf = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = revBuf.getChannelData(c);
+    for (let i = 0; i < revLen; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/revLen, 2.2);
+  }
+  convolver.buffer = revBuf;
+
+  const revGain = audioCtx.createGain();
+  revGain.gain.value = 0.35;
+  convolver.connect(revGain);
+  revGain.connect(audioCtx.destination);
+  soundNodes.push(convolver, revGain);
+
+  // ── Compressor master ───────────────────────────────────────────────────
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -18;
+  comp.ratio.value = 4;
+  comp.connect(audioCtx.destination);
+  comp.connect(convolver);
+  soundNodes.push(comp);
+
+  // ── Pad atmosférico (3 camadas de sine com LFO lento) ───────────────────
+  [[87.3, 0.045], [110, 0.03], [130.8, 0.02]].forEach(([freq, gain]) => {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    const lfo = audioCtx.createOscillator();
+    const lg = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.value = freq;
+    lfo.type = 'sine'; lfo.frequency.value = 0.07 + Math.random() * 0.05;
+    lg.gain.value = 3;
+    lfo.connect(lg); lg.connect(osc.frequency);
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(gain, now + 4);
+    osc.connect(g); g.connect(comp);
+    osc.start(); lfo.start();
+    soundNodes.push(osc, g, lfo, lg);
+  });
+
+  // ── Pulso rítmico (kick suave a cada 1.2s) ──────────────────────────────
+  const BPM_INTERVAL = 1.2;
+  let nextBeat = now + 0.5;
+  let beatCount = 0;
+
+  function scheduleBeat() {
+    if (!audioCtx) return;
+    const t = nextBeat;
+
+    // Sub-kick: sine curto descendente
+    const kick = audioCtx.createOscillator();
+    const kickEnv = audioCtx.createGain();
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(120, t);
+    kick.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+    kickEnv.gain.setValueAtTime(0, t);
+    kickEnv.gain.linearRampToValueAtTime(0.5, t + 0.005);
+    kickEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    kick.connect(kickEnv); kickEnv.connect(comp);
+    kick.start(t); kick.stop(t + 0.3);
+    soundNodes.push(kick, kickEnv);
+
+    // Hi-hat sutil a cada 2 beats
+    if (beatCount % 2 === 1) {
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 3);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const hg = audioCtx.createGain();
+      hg.gain.value = 0.04;
+      const hf = audioCtx.createBiquadFilter();
+      hf.type = 'highpass'; hf.frequency.value = 8000;
+      src.connect(hf); hf.connect(hg); hg.connect(comp);
+      src.start(t);
+      soundNodes.push(src, hg, hf);
+    }
+
+    // Melodia: nota a cada 4 beats
+    if (beatCount % 4 === 0) {
+      const melody = [196.0, 220.0, 233.1, 261.6, 220.0, 196.0, 174.6, 196.0];
+      const freq = melody[(beatCount/4) % melody.length];
+      const mo = audioCtx.createOscillator();
+      const mg = audioCtx.createGain();
+      mo.type = 'triangle'; mo.frequency.value = freq;
+      mg.gain.setValueAtTime(0, t);
+      mg.gain.linearRampToValueAtTime(0.09, t + 0.02);
+      mg.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
+      mo.connect(mg); mg.connect(comp);
+      mo.start(t); mo.stop(t + 1.2);
+      soundNodes.push(mo, mg);
+    }
+
+    beatCount++;
+    nextBeat += BPM_INTERVAL;
+
+    const delay = (nextBeat - audioCtx.currentTime) * 1000 - 50;
+    const tid = setTimeout(scheduleBeat, Math.max(0, delay));
+    soundNodes.push({ stop: () => clearTimeout(tid), disconnect: ()=>{} });
+  }
+
+  scheduleBeat();
+}
+
+function stopSound() {
+  if (!audioCtx) return;
+  soundNodes.forEach(n => { try { n.stop && n.stop(); n.disconnect && n.disconnect(); } catch(e){} });
+  audioCtx.close(); audioCtx = null; soundNodes = [];
+}
+
+// ─── ANIMATED CHART ────────────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('anim-chart');
+  const ctx = canvas.getContext('2d');
+  let points = [];
+  let ready = false;
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.offsetWidth || window.innerWidth;
+    const h = 220;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+  }
+  window.addEventListener('resize', () => { resize(); if (ready) draw(1); });
+  resize();
+
+  function genCurve(n, start, end) {
+    const pts = [start];
+    const trend = (end - start) / n;
+    for (let i = 1; i < n; i++) {
+      let v = pts[i-1] + trend + (Math.random() - 0.42) * (end - start) * 0.035;
+      v = Math.max(start * 0.97, v);
+      pts.push(v);
+    }
+    pts[pts.length-1] = end;
+    return pts;
+  }
+
+  async function init() {
+    try {
+      const r = await fetch(API + '/api/balance-history?period=all');
+      const d = await r.json();
+      if (d && d.length > 5) { points = d.map(x => x.total); }
+      else throw new Error();
+    } catch(e) {
+      points = genCurve(200, 100, 133);
+    }
+    ready = true;
+    requestAnimationFrame(animate);
+  }
+
+  function draw(progress) {
+    const W = canvas.offsetWidth || window.innerWidth;
+    const H = 220;
+    ctx.clearRect(0, 0, W, H);
+    if (!points.length) return;
+    const n = Math.max(2, Math.floor(points.length * progress));
+    const sl = points.slice(0, n);
+    const mn = Math.min(...sl) * 0.997, mx = Math.max(...sl) * 1.003;
+    const px = { l:0, r:0, t:20, b:20 };
+    const X = i => px.l + (i/(sl.length-1))*(W-px.l-px.r);
+    const Y = v => px.t + (1-(v-mn)/(mx-mn))*(H-px.t-px.b);
+
+    const grad = ctx.createLinearGradient(0,px.t,0,H);
+    grad.addColorStop(0,'rgba(124,58,237,0.16)');
+    grad.addColorStop(1,'rgba(124,58,237,0)');
+    ctx.beginPath();
+    ctx.moveTo(X(0), Y(sl[0]));
+    for (let i=1;i<sl.length;i++) {
+      const cx=(X(i-1)+X(i))/2;
+      ctx.bezierCurveTo(cx,Y(sl[i-1]),cx,Y(sl[i]),X(i),Y(sl[i]));
+    }
+    ctx.lineTo(X(sl.length-1),H); ctx.lineTo(X(0),H); ctx.closePath();
+    ctx.fillStyle=grad; ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(X(0),Y(sl[0]));
+    for (let i=1;i<sl.length;i++) {
+      const cx=(X(i-1)+X(i))/2;
+      ctx.bezierCurveTo(cx,Y(sl[i-1]),cx,Y(sl[i]),X(i),Y(sl[i]));
+    }
+    ctx.strokeStyle='#7c3aed'; ctx.lineWidth=1.5; ctx.stroke();
+
+    const ex=X(sl.length-1), ey=Y(sl[sl.length-1]);
+    const gr2=ctx.createRadialGradient(ex,ey,0,ex,ey,14);
+    gr2.addColorStop(0,'rgba(167,139,250,0.5)'); gr2.addColorStop(1,'rgba(167,139,250,0)');
+    ctx.beginPath(); ctx.arc(ex,ey,14,0,Math.PI*2); ctx.fillStyle=gr2; ctx.fill();
+    ctx.beginPath(); ctx.arc(ex,ey,3,0,Math.PI*2); ctx.fillStyle='#a78bfa'; ctx.fill();
+  }
+
+  let t0 = null;
+  const DUR = 4500;
+  function animate(ts) {
+    if (!t0) t0 = ts;
+    const p = Math.min((ts-t0)/DUR,1);
+    const e = p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+    draw(e);
+    if (p<1) requestAnimationFrame(animate);
+    else setInterval(()=>draw(1), 60000);
+  }
+
+  init();
+})();
+
+// ─── METRICS ───────────────────────────────────────────────────────────────
+async function loadMetrics() {
+  try {
+    const [r24, r7d, r30d] = await Promise.all([
+      fetch(API+'/api/24h-result').then(r=>r.json()).catch(()=>null),
+      fetch(API+'/api/7d-result').then(r=>r.json()).catch(()=>null),
+      fetch(API+'/api/30d-result').then(r=>r.json()).catch(()=>null),
+    ]);
+    function fmt(v) { return (v>=0?'+':'')+v.toFixed(2)+'%'; }
+    function set(id, val, pos) {
+      const el=document.getElementById(id);
+      if(el){el.textContent=val; el.className='metric-value '+(pos?'green':'red');}
+    }
+    if(r24?.pct!=null) set('m-24h',fmt(r24.pct),r24.pct>=0);
+    if(r7d?.pct!=null) set('m-7d',fmt(r7d.pct),r7d.pct>=0);
+    if(r30d?.pct!=null && Math.abs(r30d.pct)>0.5) {
+      set('m-30d',fmt(r30d.pct),r30d.pct>=0);
+    } else if(r7d?.pct!=null) {
+      const ex=(Math.pow(1+r7d.pct/100,30/7)-1)*100;
+      set('m-30d',fmt(ex),ex>=0);
+      const note=document.getElementById('m-30d-note');
+      if(note) note.textContent=T[currentLang].extrap;
+    }
+  } catch(e){}
+}
+
+// ─── WAITLIST ──────────────────────────────────────────────────────────────
+function submitEmail(form) {
+  const inp=document.getElementById('email-'+form);
+  const msg=document.getElementById('success-'+form);
+  if(!inp.value||!inp.value.includes('@')) return;
+  waitlistCount++;
+  inp.value='';
+  msg.style.display='block';
+  document.getElementById('wcount').textContent=waitlistCount;
+}
+
+['hero','cta'].forEach(f=>{
+  const el=document.getElementById('email-'+f);
+  if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter') submitEmail(f); });
+});
+
+loadMetrics();
+setInterval(loadMetrics,60000);
+
+function activateSound() {
+  if (!soundOn) toggleSound();
+  const toast = document.getElementById('sound-toast');
+  if (toast) toast.classList.add('hidden');
+}
+
+// Também ativa no primeiro scroll
+function autoStartSound() {
+  activateSound();
+  ['scroll','touchstart'].forEach(e => document.removeEventListener(e, autoStartSound));
+}
+['scroll','touchstart'].forEach(e => document.addEventListener(e, autoStartSound));
+</script>
+</body>
+</html>
