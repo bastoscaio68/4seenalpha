@@ -245,16 +245,38 @@
   .scroll-hint span { font-size: 8px; letter-spacing: 0.3em; color: var(--muted); text-transform: uppercase; }
   .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--gold-dim), transparent); animation: scrollAnim 2s ease infinite; }
   .chart-section { padding: 60px 0 100px; }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    margin-bottom: 20px;
+  }
   .chart-label {
-    text-align: center;
     font-size: 9px;
     letter-spacing: 0.35em;
     color: var(--gold-dim);
     text-transform: uppercase;
-    margin-bottom: 20px;
   }
-  #anim-chart { width: 100%; height: 220px; display: block; min-height: 220px; }
-  .chart-caption { text-align: center; font-size: 9px; color: var(--muted); letter-spacing: 0.15em; margin-top: 16px; }
+  .chart-clock {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    min-width: 80px;
+    text-align: right;
+  }
+  .chart-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 32px 0;
+  }
+  .chart-caption { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; }
+  .chart-pct { font-family: "Cormorant Garamond", serif; font-size: 22px; font-weight: 300; }
+  .chart-pct.green { color: var(--green); }
+  .chart-pct.red { color: var(--red); }
+  #anim-chart { width: 100%; height: 260px; display: block; min-height: 260px; }
   .manifesto {
     padding: 100px 24px;
     background: var(--surface);
@@ -417,9 +439,15 @@
 </div>
 
 <div class="chart-section">
-  <div class="chart-label" id="txt-chartlabel">Curva de Capital · Sistema ao Vivo</div>
+  <div class="chart-header">
+    <div class="chart-label" id="txt-chartlabel">Últimas 24h · Time-lapse</div>
+    <div class="chart-clock" id="chart-clock">--:--</div>
+  </div>
   <canvas id="anim-chart"></canvas>
-  <div class="chart-caption" id="txt-chartcap">Dados reais. Sistema operando agora.</div>
+  <div class="chart-footer">
+    <div class="chart-caption" id="txt-chartcap">Dados reais. Sistema operando agora.</div>
+    <div class="chart-pct" id="chart-pct"></div>
+  </div>
 </div>
 
 <div class="manifesto">
@@ -785,14 +813,14 @@ function stopSound() {
   }
 
   let t0 = null;
-  const DUR = 4500;
+  const DUR = 60000;
   function animate(ts) {
     if (!t0) t0 = ts;
     const p = Math.min((ts-t0)/DUR,1);
     const e = p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
     draw(e);
     if (p<1) requestAnimationFrame(animate);
-    else setInterval(()=>draw(1), 60000);
+    else { t0 = null; requestAnimationFrame(animate); } // loop infinito
   }
 
   init();
